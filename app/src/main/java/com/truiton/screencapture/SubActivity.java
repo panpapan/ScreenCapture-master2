@@ -26,7 +26,11 @@ import com.googlecode.mp4parser.authoring.tracks.AppendTrack;
 import com.googlecode.mp4parser.authoring.tracks.CroppedTrack;
 
 import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -39,25 +43,34 @@ public class SubActivity extends Activity {
     private String fileName = "hello.txt";
     private Button buttonSave, buttonRead;
     private String text = "no string";
-    private int count = 0;
+
+    private String outputFilePath;
 
     private int from;
     private int to;
     private MediaPlayer mp;
 
-    private MyTimerTask timerTask = null;
-    private Timer timer = null;
-    private Handler handler = new Handler();
+    private int length;
 
     private Button button;
     private Runnable r;
 
     private String filePath;
 
+    private Timer timer;
+    private CountUpTimerTask timerTask = null;
+    private Handler handler = new Handler();
+    private long count = 0;
+
+    private TextView timerText;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sub);
+
+        timerText = (TextView)findViewById(R.id.timer);
+        timerText.setText("00:00.0");
 
         Intent intent = getIntent();
         filePath = intent.getStringExtra("FilePass");
@@ -65,23 +78,84 @@ public class SubActivity extends Activity {
         final EditText editText = (EditText) findViewById(R.id.editText);
         final EditText editText2 = (EditText) findViewById(R.id.editText2);
 
-        // Android 6, API 23以上でパーミッシンの確認
-        if (Build.VERSION.SDK_INT >= 23) {
-            checkPermission();
-        } else {
-            setUpReadWriteExternalStorage();
-        }
+
+        findViewById(R.id.play).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Android 6, API 23以上でパーミッシンの確認
+                if (Build.VERSION.SDK_INT >= 23) {
+                    checkPermission();
+                } else {
+                    setUpReadWriteExternalStorage();
+                }
+            }
+        });
+
 
         findViewById(R.id.trimview).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                String outputFilePath = Environment.getExternalStoragePublicDirectory(
-                        Environment.DIRECTORY_PICTURES).getPath()+"/output_crop.mp4";
+                /*String outputFilePath = Environment.getExternalStoragePublicDirectory(
+                        Environment.DIRECTORY_PICTURES).getPath()+"/output_crop.mp4";*/
+
+                mp = new MediaPlayer();
+
+
+                FileInputStream fs = null;
+                FileDescriptor fd = null;
+
+                try {
+                    fs = new FileInputStream(outputFilePath);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    fd = fs.getFD();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    mp.setDataSource(fd);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    mp.prepare();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                length = mp.getDuration();
+                mp.release();
+
+                /*final TextView textView = (TextView) findViewById(R.id.textView);
+                textView.setText(String.valueOf(length));*/
+
+
 
                 VideoView videoView = (VideoView) findViewById(R.id.video);
                 videoView.setVideoPath(outputFilePath);
                 videoView.start();
+
+                if(null != timer){
+                    timer.cancel();
+                    timer = null;
+                    //timerText.setText("00:00.0");
+                }
+
+                // Timer インスタンスを生成
+                timer = new Timer();
+
+                // TimerTask インスタンスを生成
+                timerTask = new CountUpTimerTask();
+
+                // スケジュールを設定 100msec
+                // public void schedule (TimerTask task, long delay, long period)
+                timer.schedule(timerTask, 0, 100);
+
+                // カウンター
+                count = 0;
+                timerText.setText("00:00.0");
             }
         });
 
@@ -122,8 +196,18 @@ public class SubActivity extends Activity {
 
             // 出力
             Container out = new DefaultMp4Builder().build(movie);
-            String outputFilePath = Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_PICTURES).getPath()+"/output_crop.mp4";
+
+            File mfile = new File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES), "trimming");
+            if (!mfile.mkdirs()) {
+                //Log.e(LOG_TAG, "Directory not created");
+            }
+            File file = File.createTempFile("test",".mp4",mfile);
+
+            outputFilePath = file.toString();
+
+            /*outputFilePath = Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES).getPath()+"/output_crop.mp4";*/
             FileOutputStream fos = new FileOutputStream(new File(outputFilePath));
             out.writeContainer(fos.getChannel());
             fos.close();
@@ -136,7 +220,7 @@ public class SubActivity extends Activity {
 
     private void setUpReadWriteExternalStorage() {
 
-        /*if(isExternalStorageReadable()) {
+        if (isExternalStorageReadable()) {
             mp = new MediaPlayer();
 
 
@@ -163,32 +247,59 @@ public class SubActivity extends Activity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            final int length = mp.getDuration();
+            length = mp.getDuration();
             mp.release();
 
-            final TextView textView = (TextView) findViewById(R.id.textView);*/
+            /*final TextView textView = (TextView) findViewById(R.id.textView);
+            textView.setText(String.valueOf(length));*/
 
 
-        VideoView videoView = (VideoView) findViewById(R.id.video);
-        videoView.setVideoPath(filePath);
-        videoView.start();
+            VideoView videoView = (VideoView) findViewById(R.id.video);
+            videoView.setVideoPath(filePath);
+            videoView.start();
 
 
-            /*final Handler handler = new Handler();
-            r = new Runnable() {
-                int count = 0;
-                @Override
+            if(null != timer){
+                timer.cancel();
+                timer = null;
+                //timerText.setText("00:00.0");
+            }
+
+            // Timer インスタンスを生成
+            timer = new Timer();
+
+            // TimerTask インスタンスを生成
+            timerTask = new CountUpTimerTask();
+
+            // スケジュールを設定 100msec
+            // public void schedule (TimerTask task, long delay, long period)
+            timer.schedule(timerTask, 0, 100);
+
+            // カウンター
+            count = 0;
+            timerText.setText("00:00.0");
+        }
+
+    }
+
+    class CountUpTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            // handlerを使って処理をキューイングする
+            handler.post(new Runnable() {
                 public void run() {
-                    // UIスレッド
-                    if (count > length/1000) {
-                        return;
-                    }
-                    textView.setText(String.valueOf(count));
-                    handler.postDelayed(this, 1000);
                     count++;
+                    long mm = count*100 / 1000 / 60;
+                    long ss = count*100 / 1000 % 60;
+                    long ms = (count*100 - ss * 1000 - mm * 1000 * 60)/100;
+                    // 桁数を合わせるために02d(2桁)を設定
+                    timerText.setText(String.format("%1$02d:%2$02d.%3$01d", mm, ss, ms));
+                    if(count > length/100) {
+                        timer.cancel();
+                    }
                 }
-            };
-            handler.post(r);*/
+            });
+        }
     }
 
     // Checks if external storage is available for read and write
@@ -258,7 +369,7 @@ public class SubActivity extends Activity {
         }
     }
 
-    class MyTimerTask extends TimerTask {
+    /*class MyTimerTask extends TimerTask {
 
         @Override
         public void run() {
@@ -269,5 +380,5 @@ public class SubActivity extends Activity {
                 }
             });
         }
-    }
+    }*/
 }
