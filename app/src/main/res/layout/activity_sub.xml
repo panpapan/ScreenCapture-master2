@@ -1,50 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
+    android:background="@drawable/background"
     android:layout_height="match_parent">
 
     <EditText
         android:id="@+id/editText"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:inputType="textPersonName"
-        android:text="Name" />
+        android:inputType="number"
+        android:layout_below="@+id/play"
+        android:layout_alignParentStart="true" />
 
     <EditText
         android:id="@+id/editText2"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:inputType="textPersonName"
-        android:text="Name" />
+        android:inputType="number"
+        android:layout_alignBaseline="@+id/editText"
+        android:layout_alignBottom="@+id/editText"
+        android:layout_toEndOf="@+id/editText" />
 
     <Button
         android:id="@+id/next"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="トリミング" />
+        android:text="トリミング"
+        android:background="#ffffff"
+        android:layout_above="@+id/video"
+        android:layout_alignParentEnd="true" />
 
     <VideoView
         android:id="@+id/video"
-        android:layout_width="293dp"
-        android:layout_height="323dp" />
+        android:layout_width="420dp"
+        android:layout_height="640dp"
+        android:layout_below="@+id/editText"
+        android:layout_toStartOf="@+id/return1"
+        android:layout_marginTop="20dp" />
 
     <TextView
-        android:id="@+id/textView2"
-        android:layout_width="match_parent"
+        android:id="@+id/timer"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="TextView" />
+        android:text="TextView"
+        android:textSize="30sp"
+        android:layout_alignBaseline="@+id/trimview"
+        android:layout_alignBottom="@+id/trimview"
+        android:layout_alignEnd="@+id/play" />
 
     <Button
         android:id="@+id/trimview"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="トリミング後を再生" />
+        android:text="トリミング後を再生"
+        android:background="#ffffff"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true" />
 
     <Button
         android:id="@+id/return1"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="戻る" />
-</LinearLayout>
+        android:text="戻る"
+        android:background="#ffffff"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true" />
+
+    <Button
+        android:id="@+id/play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="トリミング前を再生"
+        android:background="#ffffff"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+</RelativeLayout>
